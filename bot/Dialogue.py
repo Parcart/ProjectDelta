@@ -73,7 +73,7 @@ class DialogueBase:
     __instance = dict()
 
     def __init__(self, name, user_id):
-        self.messages = []
+        self._messages = []
         self.name: Optional[str] = name
         self.id = None
         self.user_id = user_id
@@ -85,6 +85,10 @@ class DialogueBase:
     def next_message_id(self):
         self.__next_message_id += 1
         return self.__next_message_id
+
+    @property
+    def messages(self):
+        return self._messages
 
     @classmethod
     async def create(cls, name, user_id):
@@ -134,6 +138,10 @@ class DialogueGPT4FREE(DialogueBase):
         message_base: MessageBase = await super().__call__(role, text, audio_request_iterator)
         self.messages.append(MessageGPT4FREE(message_base))
 
+    @property
+    def messages(self) -> list:
+        return [message() for message in self._messages]
+
 
 class MessageBase:
 
@@ -147,6 +155,7 @@ class MessageGPT4FREE(MessageBase):
 
     def __init__(self, message: MessageBase):
         super().__init__(message_id=message.id, role=message.role, content=message.content)
+        self.role = MessageRoleGPT4FREE(message.role.name)
 
     def __call__(self) -> dict:
         return dict(role=self.role, content=self.content)

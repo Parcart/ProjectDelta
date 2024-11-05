@@ -1,8 +1,4 @@
-
-
-class OpenAIWhisperTTS:
-
 class Bot:
     tasks = {}
 
-    def __init__(self):
+    def generate_answer(self, ) -> str:

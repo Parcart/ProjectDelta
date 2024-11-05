@@ -1,0 +1,25 @@
+services:
+    app:
+      volumes:
+        - ./app:/app
+
+    web-proxy:
+      image: nginx
+      ports:
+        - "80:80", "443:443"
+      depends_on:
+        - app
+
+    rabbitmq:
+      image: rabbitmq
+      ports:
+        - "15672:15672", "5672:5672"
+      volumes:
+        - ./data/rabbitmq:/var/lib/rabbitmq
+      restart: always
+
+    database:
+      image: postgres
+      volumes:
+        - ./data/postgres:/var/lib/postgresql/data
+      restart: always

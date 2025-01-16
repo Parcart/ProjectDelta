@@ -1,25 +1,64 @@
 services:
-    app:
-      volumes:
-        - ./app:/app
-
-    web-proxy:
-      image: nginx
-      ports:
-        - "80:80", "443:443"
-      depends_on:
-        - app
-
+#  g4f:
+#    container_name: g4f
+#    image: hlohaus789/g4f:latest
+#    shm_size: 2gb
+#    build:
+#      context: ./docker/g4f
+#      dockerfile: Dockerfile
+#
+##    command: python -m g4f.api.run
+#
+#    ports:
+#      - '8080:8080'
+#      - '1337:1337'
+#      - '7900:7900'
+#    environment:
+#      - OLLAMA_HOST=host.docker.internal
+#      - G4F_VERSION=1
+#    app:
+#      volumes:
+#        - ./app:/app
+#
+#    web-proxy:
+#      image: nginx
+#      ports:
+#        - "80:80", "443:443"
+#      depends_on:
+#        - app
+#
     rabbitmq:
-      image: rabbitmq
+      image: rabbitmq:4.0.5-management
       ports:
-        - "15672:15672", "5672:5672"
+        - "15672:15672"
+        - "5672:5672"
       volumes:
         - ./data/rabbitmq:/var/lib/rabbitmq
       restart: always
 
+    whisper_live:
+      build:
+        context: ./WhisperLive
+        dockerfile: docker/Dockerfile
+      environment:
+        - NSM_FLAG=-nsm
+        - RabbitMQ_HOST=${RABBITMQ_HOST}
+        - RabbitMQ_PORT=${RABBITMQ_PORT}
+      deploy:
+        resources:
+          reservations:
+            devices:
+              - driver: nvidia
+                count: all
+                capabilities: [ gpu ]
+
     database:
-      image: postgres
+      image: postgres:17.2
       volumes:
         - ./data/postgres:/var/lib/postgresql/data
-      restart: always
+      ports:
+        - '5432:5432'
+      environment:
+        - POSTGRES_USER=${POSTGRES_USER}
+        - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+        - POSTGRES_DB=${POSTGRES_DB}

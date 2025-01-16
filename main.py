@@ -1,5 +1,5 @@
 """
-This file is used to launch modules and initialize the application
+This file is used to launch modules and initialize the application CLI
 """
 import argparse
 import asyncio
@@ -9,9 +9,7 @@ def run_fastapi():
     """
     Run Rest API and initialize of objects necessary for work
     """
-    # DAO()
-    # EmailService()
-    # uvicorn.run(app, host="0.0.0.0", port=80, reload=False)
+    import app
 
 
 async def run_rpc():

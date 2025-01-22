@@ -1,0 +1,48 @@
+.h-100 {
+    height: 100%;
+}
+
+#messages-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 15px;
+}
+
+.message {
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    max-width: 70%;
+}
+
+.user-message {
+    background-color: #dcf8c6; /* Light green */
+    align-self: flex-end;
+}
+
+.bot-message {
+    background-color: #f1f0f0; /* Light gray */
+    align-self: flex-start;
+}
+
+/* Add Bootstrap classes for better styling */
+#chat-list-container, #chat-window-container {
+    height: calc(100vh - 100px); /* Adjust as needed */
+    overflow-y: auto;
+}
+
+#chat-list {
+    margin-bottom: 20px;
+}
+
+#add-chat-button, #attach-button, #record-button, #send-button {
+    margin-top: 10px;
+}
+
+.btn-group {
+    margin-bottom: 10px;
+}
+.list-group-item-action.active{
+    background-color: #0d6efd;
+     color: white;
+}

@@ -8,10 +8,12 @@ from app.rest.EmailService import EmailService
 
 
 async def main() -> None:
-    DAO()
+    await DAO().checkDatabase()
     EmailService()
     from app.rest.main import app
-    uvicorn.run(app, host="0.0.0.0", port=80, reload=False)
+    config = uvicorn.Config(app, host="0.0.0.0", port=8080, reload=False)
+    server = uvicorn.Server(config)
+    await server.serve()
 
 
 if __name__ == "__main__":

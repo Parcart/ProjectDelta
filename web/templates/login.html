@@ -1,0 +1,39 @@
+{% extends "layout.html" %}
+
+{% block content %}
+    <div class="container-fluid d-flex justify-content-center align-items-center min-vh-100">
+        <div class="row justify-content-center align-self-center rounded" style="z-index: 1;">
+            <div class="col-md-12 bg-light p-4 rounded shadow" style="max-width: 300px">
+                <h2 class="text-center mb-4">Login</h2>
+                {% if error %}
+                    <div class="alert alert-danger">
+                        {{ error }}
+                    </div>
+                {% endif %}
+                <form method="post" action="/auth/login">
+                    {{ login_form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ login_form.email.label(class="form-label") }}
+                        {{ login_form.email(class="form-control", placeholder="Email") }}
+                        {% for error in login_form.email.errors %}
+                            <span style="color: red;">[{{ error }}]</span>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ login_form.password.label(class="form-label") }}
+                        {{ login_form.password(class="form-control", placeholder="Password") }}
+                        {% for error in login_form.password.errors %}
+                           <span style="color: red;">[{{ error }}]</span>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3 text-center">
+                        {{ login_form.submit(class="btn btn-dark rounded-pill mx-auto d-block") }}
+                    </div>
+                </form>
+                <div class="text-center mt-3">
+                    <p>Don't have an account? <a href="{{ url_for('registration_page') }}">Register here</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

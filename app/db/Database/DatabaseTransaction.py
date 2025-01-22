@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from sqlalchemy import select, update
+from sqlalchemy import select, update, desc
 from sqlalchemy.dialects.postgresql import insert
 
 from app.db.schema import UserBalance
@@ -13,7 +13,7 @@ class DatabaseTransaction:
         self._instance = instance
 
     def get(self, user_id: str) -> List[Transaction]:
-        stmt = select(Transaction).where(Transaction.user_id == user_id)
+        stmt = select(Transaction).where(Transaction.user_id == user_id).order_by(desc(Transaction.created_at))
         return self._instance.GetAll(stmt)
 
     def get_admin(self) -> List[Transaction]:
@@ -26,7 +26,7 @@ class DatabaseTransaction:
         result = await self._instance.GetSingle(stmt)
 
         if transaction_type == TransactionType.CREDIT:
-            if result.balance < amount:
+            if result.voice_seconds < amount:
                 raise Exception("Недостаточно средств")
 
         stmt = insert(Transaction).values(user_id=user_id, amount=amount, description=description, transaction_type=transaction_type)

@@ -1,0 +1,78 @@
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f0f0f0;
+}
+
+.search-box {
+    display: flex;
+    background-color: #2f3640;
+    height: 60px;
+    border-radius: 40px;
+    padding: 10px 10px;
+    line-height: 3.3333333;
+}
+
+
+
+.search-txt {
+    border: none;
+    outline: none;
+    background: none;
+    padding: 0;
+    color: #fff;
+    font-size: 16px;
+    width: 1100px;
+    max-width: 100%;
+}
+
+
+
+.search-box:hover .search-btn {
+    background-color: #2b2b2b;
+}
+
+
+.btn225 {
+    display: inline-block;
+    padding: 12px 45px;
+    margin-bottom: 0;
+    font-size: 14px;
+    font-weight: normal;
+    line-height: 1.428571429;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    cursor: pointer;
+    border: 1px solid transparent;
+    border-radius: 20px;
+    user-select: none;
+    color: #f0f0f0;
+    background-color: #2f3640;
+    border-color: #4cae4c;
+}
+
+.btn-success {
+    color: #fff;
+    background-color: #5cb85c;
+    border-color: #4cae4c;
+}
+
+.jumbotron10 {
+    padding: 30px;
+    margin-bottom: 30px;
+    font-size: 21px;
+    font-weight: 200;
+    line-height: 3.5428571435;
+    color: inherit;
+    background-color: #eee;
+}
+
+.navbar-brand10 {
+    float: left;
+    padding: 5px 5px;
+    font-size: 18px;
+    line-height: 20px;
+}

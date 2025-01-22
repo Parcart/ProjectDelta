@@ -31,6 +31,7 @@ class UserResponse(BaseModel):
     created_at: datetime
     name: str
     balance: int
+    role: Role
 
 
 class APIUserResponse(BaseModel):

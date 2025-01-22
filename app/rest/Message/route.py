@@ -12,12 +12,15 @@ import aio_pika
 import numpy as np
 
 from fastapi import UploadFile
-from fastapi.params import Depends
+from fastapi.params import Depends, File, Form
 from starlette import status
 from starlette.exceptions import HTTPException
 
+from .entity import CreateDialogueRequest, CreateMessageRequest, GetMessagesRequest
 from ..CustomAPIRouter import APIRouter
 from app.db.schema import User as UserSchema
+from ...db.DAO import DAO
+from ...db.schema.Base import TransactionType, MessageContentType, SenderType
 from ...jwt_auth.auth_jwt import get_current_active_user
 
 
@@ -116,11 +119,15 @@ class AudioProcessor:
 
 
 class Message:
-    rabbit_mq_manager: RabbitMQManager = None
+    rabbitmq_manager: RabbitMQManager
 
     def __init__(self):
-        self.route = APIRouter(prefix="/", tags=["transcribe"])
+        self.route = APIRouter(prefix="/message", tags=["Dialogue", "Message"])
         self.route.add_api_route("/transcribe", self.transcribe, methods=["POST"])
+        self.route.add_api_route('/create_message', self.create_message, methods=["POST"])
+        self.route.add_api_route('/create_dialogue', self.create_dialogue, methods=["POST"])
+        self.route.add_api_route('/get_messages', self.get_messages, methods=["GET"])
+        self.route.add_api_route('/get_dialogues', self.get_dialogues, methods=["GET"])
 
     async def transcribe(self, current_user: Annotated[UserSchema, Depends(get_current_active_user)],
                          file: UploadFile):
@@ -140,11 +147,61 @@ class Message:
         if current_user.balance.voice_seconds < duration:
             return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Недостаточно средств")
 
-        result = await self.rabbit_mq_manager.send_and_wait_for_response(audio_bytes)
+        try:
+            result = await self.rabbitmq_manager.send_and_wait_for_response(audio_bytes)
+        except Exception as e:
+            print(f"Произошла ошибка при обработке аудио: {e}")
+            raise e
 
         if result.get("result"):
+            await DAO().Transaction.post(current_user.id, duration, "Транскрипция.",
+                                         transaction_type=TransactionType.CREDIT)
             return result
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=result.get("error"))
+
+    async def create_message(self, current_user: Annotated[UserSchema, Depends(get_current_active_user)],
+                             file: UploadFile | None = File(None),
+                             dialogue_id: str = Form(...),
+                             text: str | None = Form(None)
+                             ):
+        dialogue = await DAO().Message.get_dialogue(current_user.id, dialogue_id)
+        if not dialogue:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Диалог не найден")
+
+        transcription = await self.transcribe(current_user, file)
+
+        if not transcription['result']:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=transcription['error'])
+
+        user_message = await DAO().Message.create_message(dialogue_id=dialogue_id,
+                                                          content_type=MessageContentType.VOICE_MESSAGE,
+                                                          sender=SenderType.USER, text=file.filename)
+
+        result = await DAO().Message.create_message(dialogue_id=dialogue_id,
+                                                    content_type=MessageContentType.TEXT_MESSAGE,
+                                                    sender=SenderType.BOT, text=transcription['result'])
+
+        return {"message_id": result.inserted_primary_key[0], "bot_message": transcription['result']}
+
+    @staticmethod
+    async def create_dialogue(current_user: Annotated[UserSchema, Depends(get_current_active_user)],
+                              dialogue_request: CreateDialogueRequest):
+        result = await DAO().Message.create_dialogue(current_user.id, dialogue_request.name)
+
+        return {"dialogue_id": result.inserted_primary_key[0]}
+
+    @staticmethod
+    async def get_dialogues(current_user: Annotated[UserSchema, Depends(get_current_active_user)]):
+        result = await DAO().Message.get_dialogues(current_user.id)
+
+        return result
+
+    @staticmethod
+    async def get_messages(current_user: Annotated[UserSchema, Depends(get_current_active_user)],
+                           dialogue_request: GetMessagesRequest):
+        result = await DAO().Message.get_messages(dialogue_request.dialogue_id)
+        return result
+
 
 #     @staticmethod
 #     async def websocket_endpoint(websocket: WebSocket):

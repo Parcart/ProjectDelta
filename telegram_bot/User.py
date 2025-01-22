@@ -1,10 +1,12 @@
 import json
 import os
 import urllib.request
+import uuid
 from calendar import timegm
 from datetime import timedelta, datetime, timezone
 from enum import Enum
 from functools import lru_cache
+from io import BytesIO
 from typing import Optional, Callable, List
 from urllib.error import URLError
 
@@ -83,7 +85,7 @@ class Authentication(AuthConfig):
 
     def authenticate(self, tg_id: int):
         request = urllib.request.Request(
-            os.getenv('REST') + "/user/tg_auth",
+            os.environ['REST'] + "/user/tg_auth",
             data=json.dumps({
                 "telegram_id": tg_id
             }).encode('utf-8'),
@@ -119,7 +121,7 @@ class Authentication(AuthConfig):
     def get_access_token(self):
         def refresh_token():
             request = urllib.request.Request(
-                os.getenv("REST") + "/user/refresh/",
+                os.environ['REST'] + "/user/refresh/",
                 headers={'accept': 'application/json', 'Content-Type': 'application/json',
                          "Authorization": f"Bearer {self.refresh_token}"},
                 method='POST')
@@ -269,7 +271,7 @@ class User(TelebotUser, metaclass=Singleton):
 
     def registration(self, user_form: UserRegistrationFrom):
         request = urllib.request.Request(
-            os.getenv("REST") + "/user/registrationtg/",
+            os.environ['REST'] + "/user/registrationtg/",
             data=json.dumps({
                 "email": user_form.email,
                 'password': "NULL",
@@ -292,7 +294,7 @@ class User(TelebotUser, metaclass=Singleton):
 
     def send_verification_email_code(self):
         request = urllib.request.Request(
-            os.getenv("REST") + "/user/send_confirm_code_email/",
+            os.environ['REST'] + "/user/send_confirm_code_email/",
             headers={'accept': 'application/json', 'Content-Type': 'application/json',
                      "Authorization": f"Bearer {self.auth.get_access_token()}"},
             method='POST')
@@ -310,7 +312,7 @@ class User(TelebotUser, metaclass=Singleton):
 
     def confirm_verification_code(self, code: str):
         request = urllib.request.Request(
-            os.getenv("REST") + "/user/confirm_email/",
+            os.environ['REST'] + "/user/confirm_email/",
             data=json.dumps({
                 "code": code
             }).encode('utf-8'),
@@ -328,7 +330,7 @@ class User(TelebotUser, metaclass=Singleton):
 
     def link_telegram(self, email: str, code: int):
         request = urllib.request.Request(
-            os.getenv("REST") + "/user/link_telegram/",
+            os.environ['REST'] + "/user/link_telegram/",
             data=json.dumps({
                 "email": email,
                 "code": code
@@ -347,7 +349,7 @@ class User(TelebotUser, metaclass=Singleton):
 
     def send_link_telegram_code(self):
         request = urllib.request.Request(
-            os.getenv("REST") + "/user/send_link_telegram_code/",
+            os.environ['REST'] + "/user/send_link_telegram_code/",
             headers={'accept': 'application/json', 'Content-Type': 'application/json',
                      "Authorization": f"Bearer {self.auth.get_access_token()}"})
 
@@ -367,7 +369,7 @@ class User(TelebotUser, metaclass=Singleton):
 
     def profile(self) -> UserProfile:
         request = urllib.request.Request(
-            os.getenv("REST") + "/user",
+            os.environ['REST'] + "/user",
             headers={'accept': 'application/json', 'Content-Type': 'application/json',
                      "Authorization": f"Bearer {self.auth.get_access_token()}"})
 
@@ -386,7 +388,7 @@ class User(TelebotUser, metaclass=Singleton):
 
     def read_transactions(self) -> List[Transaction]:
         request = urllib.request.Request(
-            os.getenv("REST") + "/user/transactions",
+            os.environ['REST'] + "/user/transactions",
             headers={'accept': 'application/json', 'Content-Type': 'application/json',
                      "Authorization": f"Bearer {self.auth.get_access_token()}"})
 
@@ -407,7 +409,7 @@ class User(TelebotUser, metaclass=Singleton):
 
     def add_balance(self, amount: int):
         request = urllib.request.Request(
-            os.getenv("REST") + "/user/add_transaction",
+            os.environ['REST'] + "/user/add_transaction",
             data=json.dumps({
                 "amount": amount,
                 "description": "Пополнение баланса"
@@ -423,6 +425,50 @@ class User(TelebotUser, metaclass=Singleton):
                     raise
         except urllib.error.HTTPError as e:
             raise e
+
+    def transcribe(self, audio_bytes, filename="NOPROCESS"):
+        boundary = uuid.uuid4().hex
+        content_type = f'multipart/form-data; boundary={boundary}'
+        body = BytesIO()
+
+        # Добавляем файл (исправили имя и структуру)
+        body.write(("--" + boundary + "\r\n").encode())
+        body.write(f'Content-Disposition: form-data; name="file"; filename="{filename}"\r\n'.encode()) #исправленное имя файла
+        body.write('Content-Type: application/octet-stream\r\n'.encode())
+        body.write(b"\r\n")
+        body.write(audio_bytes)
+        body.write(b"\r\n")
+
+
+        # Завершающая граница
+        body.write(("--" + boundary + "--\r\n").encode())
+
+        body_bytes = body.getvalue()
+        request = urllib.request.Request(
+            os.environ['REST'] + "/message/transcribe",
+            data=body_bytes,
+            headers={'accept': 'application/json',
+                     'Content-Type': content_type,
+                     'Content-Length': str(len(body_bytes)), # правильное вычисление длины
+                     "Authorization": f"Bearer {self.auth.get_access_token()}"}
+        )
+        try:
+            with urllib.request.urlopen(request) as response:
+                if response.getcode() == 200:
+                    data = response.read().decode("utf-8")
+                    json_data = json.loads(data)
+                    return json_data
+                else:
+                    print("Error:", response.getcode())
+                    print("Message:", response.read().decode('utf-8'))
+                    raise
+        except urllib.error.HTTPError as e:
+            print(f"HTTP Error: {e.code} - {e.reason}")
+            print(e.read().decode('utf-8')) #вывод текста ошибки сервера
+            raise
+        except Exception as e:
+            print(f"Другая ошибка: {e}")
+            raise
 
     def error(self, message=None):
         if message and not isinstance(message, CallbackQuery):

@@ -53,7 +53,7 @@ class Authentication:
                                              }
                                      }
                                  })
-        self.route.add_api_route("/registration", self.registration, methods=["POST"], response_model=TokensResponse,
+        self.route.add_api_route("/registration", self.registration, methods=["POST"], response_model=int,
                                  responses={
                                      409: {
                                          "description": "ErrorCreateUser",
@@ -118,7 +118,7 @@ class Authentication:
                        request: Request,
                        authorize: AuthJWT = Depends()) -> WebTokenResponse:
         tokens_response = await self.authenticate(form_data, request, authorize)
-        return WebTokenResponse(access_token=tokens_response.access_token, token_type="bearer")
+        return WebTokenResponse(access_token=tokens_response.access_token, refresh_token=tokens_response.refresh_token, email_verified=tokens_response.email_verified, token_type="bearer")
 
     async def rest_auth(self, form_data: UserAuthenticationForm, request: Request,
                         authorize: AuthJWT = Depends()
@@ -129,7 +129,7 @@ class Authentication:
                       request: Request,
                       authorize: AuthJWT = Depends()
                       ):
-        assert request.client.host == '127.0.0.1'
+        # assert request.client.host == '127.0.0.1'
         try:
             user = await get_user(telegram_id=tg_id)
             if not user:
@@ -142,8 +142,7 @@ class Authentication:
         return await self.authenticate(tg_id, request, authorize)
 
     @staticmethod
-    async def registration(current_tg_id: Annotated[int, Depends(tg_validate_token)],
-                           form_data: UserRegistrationForm, request: Request,
+    async def registration(form_data: UserRegistrationForm, request: Request,
                            authorize: AuthJWT = Depends()) -> int:
         user = await get_user(form_data.email)
         if user:
@@ -153,7 +152,7 @@ class Authentication:
             )
         session_key = authorize.generate_session_key()
         user_id = await registration_user(email=form_data.email, password=authorize.hash_value(form_data.password),
-                                          telegram_id=current_tg_id, name=form_data.name,
+                                          telegram_id=None, name=form_data.name,
                                           session_key=session_key)
         if user_id:
             await ConfirmEmail.send_code(user_id, form_data.email)

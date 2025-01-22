@@ -1,0 +1,40 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+    <div class="container">
+        <h1>User Profile</h1>
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">User Information</h5>
+                <p><strong>Name:</strong> {{ user.name }}</p>
+                <p><strong>Email:</strong> {{ user.email }}</p>
+                <p><strong>Created at:</strong> {{ user.created_at | format_datetime }}</p>
+                <p><strong>Balance:</strong> {{ user.balance }}</p>
+            </div>
+        </div>
+
+        <h2>User Transactions</h2>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead class="thead-dark">
+                <tr>
+                    <th scope="col">Amount</th>
+                    <th scope="col">Created At</th>
+                    <th scope="col">Description</th>
+                    <th scope="col">Type</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for transaction in user.transactions %}
+                <tr>
+                    <td>{{transaction.amount}}</td>
+                    <td>{{transaction.created_at | format_datetime}}</td>
+                    <td>{{transaction.description}}</td>
+                    <td>{{transaction.transaction_type}}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+         </div>
+    </div>
+{% endblock %}

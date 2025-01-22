@@ -15,6 +15,7 @@ from telegram_bot.User import User
 from email_validator import validate_email, EmailNotValidError
 
 load_dotenv()
+print("START")
 
 
 class ExHandler(telebot.ExceptionHandler):
@@ -29,7 +30,15 @@ def generate_main_menu():
     return markup_main
 
 
-bot = telebot.TeleBot(os.getenv('TG_TOKEN'), use_class_middlewares=True)
+if os.environ.get('TG_TOKEN') is None:
+    print("TG_TOKEN not set")
+    exit(1)
+
+if os.environ.get('REST') is None:
+    os.environ['REST'] = 'http://localhost:8080'
+print(os.environ['REST'])
+
+bot = telebot.TeleBot(os.environ['TG_TOKEN'], use_class_middlewares=True)
 bot.setup_middleware(Middleware())
 User._bot = bot
 
@@ -277,13 +286,23 @@ def processing_audio(message, data):
         time_obj = datetime.strptime(output, '%H:%M:%S.%f')
         total_seconds = time_obj.hour * 3600 + time_obj.minute * 60 + time_obj.second + time_obj.microsecond / 1000000
         duration = int(math.floor(total_seconds))
-        return stdout, stderr
     except Exception as e:
         print(f"Произошла ошибка при обработке аудио: {e}")
+        bot.reply_to(message, "Произошла ошибка при обработке файла")
         raise e
 
+    if user.profile().balance < duration:
+        user.send("Недостаточно средств")
+        return
 
-    user.send("2222", generate_main_menu())
+    result = user.transcribe(stdout)
+
+    if result.get("result"):
+        bot.reply_to(message, "Текст: " + result.get("result"))
+    else:
+        print(f"Произошла ошибка при обработке аудио: {result.get('error')}")
+        bot.reply_to(message, "При транскрипции произошла ошибка")
+
 
 
 @bot.message_handler(func=lambda message: True)

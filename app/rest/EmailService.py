@@ -86,7 +86,7 @@ class EmailService(metaclass=Singleton):
                 msg['To'] = to_addr
                 server.send_message(msg, to_addrs=to_addr)
         except Exception as e:
-            print("Неудалось отправить, код :", code_confirm)
+            print("Неудалось отправить, код :", code_reset)
 
     def send_link_tg_code(self, code_confirm, to_addr):
         try:

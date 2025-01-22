@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - ProjectDelta</title>
+    <link rel="stylesheet" type="text/css" href="/static/content/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="/static/content/site.css" />
+    <link rel="stylesheet" type="text/css" href="/static/content/style.css" />
+ 
+    <link rel="icon" href="/static/content/favicon.ico" type="image/x-ico" />
+    <link rel="stylesheet" href="/static/font-awesome/css/font-awesome.min.css" />
+    <script src="/static/scripts/modernizr-2.6.2.js"></script>
+</head>
+
+
+<body >
+
+
+     {% block navbar %}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                 <img src="/static/content/logo.aaBMV.png" align="top" style="height: 30px" alt="logo" class="d-inline-block align-top"/>
+                 ProjectDelta
+            </a>
+             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                 <span class="navbar-toggler-icon"></span>
+             </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                   <li class="nav-item"><a href="{{ url_for('chat.chat') }}" class="nav-link">Chat</a></li>
+                   <li class="nav-item"><a href="about" class="nav-link">About</a></li>
+                    {% if username %}
+                    <li class="nav-item">
+                        <a href="{{ url_for('page_profile') }}" class="nav-link">
+                            Hello, {{ username }}!
+                        </a>
+                    </li>
+                    {% if role == "ADMIN" %}
+                    <li class="nav-item">
+                        <a href="{{ url_for('admin.admin_dashboard') }}" class="nav-link">Admin</a>
+                    </li>
+                    {% endif %}
+
+                    <li class="nav-item">
+                        <a href="{{ url_for('auth.logout') }}" class="nav-link">Logout</a>
+                    </li>
+                   {% else %}
+                    <li class="nav-item">
+                        <a href="/login" class="nav-link">Login</a>
+                     </li>
+                   {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+    {% endblock %}
+
+
+
+
+
+
+
+
+    <div class="container body-content">
+        <div id="flash-messages"></div>
+        {% block content %}{% endblock %}
+
+
+
+        <footer class="mt-auto">
+      <div class="container">
+         <hr />
+           <p>&copy; {{ year }} -Parcart</p>
+        </div>
+    </footer>
+    </div>
+
+
+    <script
+  src="https://code.jquery.com/jquery-3.7.1.js"
+  integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
+  crossorigin="anonymous"></script>
+    <script src="/static/scripts/bootstrap.min.js"></script>
+    <script src="/static/scripts/bootstrap.js"></script>
+    <script src="/static/scripts/respond.js"></script>
+    <script src="{{ url_for('static', filename='scripts/alert.js') }}"></script>
+     <script>
+        function showFlashMessages() {
+           const flashMessages = document.getElementById('flash-messages');
+            const messages = JSON.parse('{{ get_flashed_messages(with_categories=true) | tojson }}');
+             messages.forEach(message => {
+                  const div = document.createElement('div');
+                  div.className = `alert alert-${message[0]}`;
+                  div.textContent = message[1];
+                  flashMessages.appendChild(div);
+              });
+           }
+
+        window.addEventListener('DOMContentLoaded', showFlashMessages);
+    </script>
+    {% block scripts %}{% endblock %}
+
+</body>
+</html>

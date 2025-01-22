@@ -12,7 +12,7 @@ from starlette import status
 from .auth_config import AuthConfig
 from .exceptions import AuthenticateUserError, ValidateCredentialsError, UserNotFound
 from ..db.DAO import DAO
-from ..db.schema.Base import TokenType
+from ..db.schema.Base import TokenType, Role
 from ..rest.Authentication.entity import TokensResponse, TokenData, RefreshTokenRequest
 from ..rest.User.entity import User
 
@@ -25,8 +25,9 @@ class AuthJWT(AuthConfig):
     async def authenticate_user(cls, email: str, password: str):
         user = await DAO().User.get(email)
         if user:
-            if cls.verify_value(password, user.password):
-                return user
+            if user.password != "":
+                if cls.verify_value(password, user.password):
+                    return user
         raise AuthenticateUserError(status_code=status.HTTP_401_UNAUTHORIZED,
                                     detail="Incorrect username or password", )
 
@@ -150,6 +151,12 @@ async def get_current_active_user(current_user: Annotated[User, Depends(get_curr
         raise HTTPException(status_code=400, detail="Inactive user")
     # if not current_user.email_verified:
     #     raise HTTPException(status_code=400, detail="Email not verified")
+    return current_user
+
+
+async def get_admin_user(current_user: Annotated[User, Depends(get_current_active_user)]):
+    if not current_user.role == Role.ADMIN:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
     return current_user
 
 # async def get_current_active_user_not_email(current_user: Annotated[User, Depends(get_current_user)]):

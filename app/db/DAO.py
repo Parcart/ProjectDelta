@@ -47,7 +47,7 @@ class DAO(Database, metaclass=Singleton):
             drivername=os.getenv("DB_DRIVERNAME"),
             username=os.getenv("POSTGRES_USER"),
             password=os.getenv("POSTGRES_PASSWORD"),  # plain (unescaped) text
-            host=os.getenv("DB_HOST"),
+            host=os.getenv("DB_HOST") if os.getenv("I_AM_DOCKER") else "localhost",
             port=os.getenv("DB_PORT"),
             database=os.getenv("POSTGRES_DB"),
         )

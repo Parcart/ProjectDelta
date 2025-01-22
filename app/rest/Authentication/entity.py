@@ -32,6 +32,8 @@ class TokenResponse(BaseModel):
 
 class WebTokenResponse(BaseModel):
     access_token: str
+    refresh_token: str
+    email_verified: Optional[bool] = None
     token_type: str = "bearer"
 
 

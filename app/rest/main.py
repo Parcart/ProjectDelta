@@ -1,3 +1,4 @@
+import os
 import time
 from contextlib import asynccontextmanager
 
@@ -6,6 +7,7 @@ from fastapi import FastAPI, Request
 from fastapi.openapi.docs import get_swagger_ui_html, get_swagger_ui_oauth2_redirect_html, get_redoc_html
 
 from app.jwt_auth import AuthJWT
+from app.rest.Admin.route import Admin
 from app.rest.Authentication.route import Authentication
 from app.rest.ConfrimEmail.route import ConfirmEmail
 from app.rest.Dialogue.route import Dialogue
@@ -26,7 +28,8 @@ def get_config():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    Message.rabbitmq_manager = RabbitMQManager()
+    host = os.environ.get("RABBITMQ_HOST", "localhost")
+    Message.rabbitmq_manager = RabbitMQManager(rabbitmq_host=host, rabbitmq_port=5672)
     await Message.rabbitmq_manager.connect()
     yield
     # Clean up the ML models and release the resources
@@ -77,6 +80,7 @@ app.include_router(User().route)
 app.include_router(Dialogue().route)
 app.include_router(Transaction().route)
 app.include_router(Message().route)
+app.include_router(Admin().route)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=80)

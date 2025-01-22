@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import os
 from pathlib import Path
 from urllib.parse import quote_plus
@@ -11,7 +12,9 @@ from alembic.script import ScriptDirectory
 import alembic.config
 from sqlalchemy import URL, engine_from_config, pool, create_engine, Connection
 
+from .DatabaseAdmin import DatabaseAdmin
 from .DatabaseConfirm import DatabaseConfirm
+from .DatabaseMessage import DatabaseMessage
 from .DatabaseTransaction import DatabaseTransaction
 from .DatabaseUser import DatabaseUser
 from .DatabaseUserSession import DatabaseUserSession
@@ -21,15 +24,21 @@ from ..schema import Base
 class Database:
     def __init__(self, instance, url_object: URL):
         self.instance = instance
-        asyncio.run(self.__checkDatabase())
         self.User = DatabaseUser(instance)
         self.UserSession = DatabaseUserSession(instance)
         self.Transaction = DatabaseTransaction(instance)
         self.Confirm = DatabaseConfirm(instance)
+        self.Admin = DatabaseAdmin(instance)
+        self.Message = DatabaseMessage(instance)
         # self.UserProfile = DatabaseUserProfile(instance)
 
-    async def __checkDatabase(self):
-        config_path = Path(Path.cwd(), 'db/alembic.ini')
+    async def checkDatabase(self):
+        class_path = inspect.getfile(self.__class__)
+        print("Class path:", class_path)
+        # Получаем директорию, убирая имя файла
+        directory_path = Path(class_path).parent
+        # Формируем полный путь к конфигурационному файлу
+        config_path = directory_path / 'alembic.ini'
         alembic_config = alembic.config.Config(config_path)
         script = ScriptDirectory.from_config(alembic_config)
         env_context = EnvironmentContext(

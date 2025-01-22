@@ -14,7 +14,5 @@ class DialogueMessage(Base):
     dialogue_id: Mapped[str] = mapped_column(CHAR(32), ForeignKey("dialogue.id", ondelete="CASCADE"))
     content_type: Mapped[MessageContentType] = mapped_column(Enum(MessageContentType))
     sender: Mapped[SenderType] = mapped_column(Enum(SenderType))
-    voice_info_id: Mapped[int] = mapped_column(INT, ForeignKey("dialogue_voice_info.id", ondelete="CASCADE"), nullable=True)
-    voice_info: Mapped["VoiceInfo"] = relationship("VoiceInfo", backref="dialog_message", lazy="joined", uselist=False)
     text: Mapped[Optional[str]] = mapped_column(TEXT, nullable=True)
     timestamp: Mapped[datetime] = mapped_column(TIMESTAMP, default=func.now())
